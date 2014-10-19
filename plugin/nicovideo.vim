@@ -19,6 +19,8 @@ command! -bar -nargs=0 NicoVideoUpdateRanking call nicovideo#update_ranking(<f-a
 command! -bar -nargs=* NicoVideoLogin call nicovideo#login(<f-args>)
 command! -bar -nargs=0 NicoVideoLogout call nicovideo#logout()
 
+command! CtrlPNicovideo call ctrlp#init(ctrlp#nicovideo#id())
+
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

@@ -36,9 +36,10 @@ let g:nicovideo#password = 'xyzwXYZW1234'
 :NicoVideo sm12345678
 ```
 
-また，[unite.vim](https://github.com/Shougo/unite.vim)にも対応しており，動画の
-ランキングから選択して，動画を再生することができます．
+#### unite.vim
 
+[unite.vim](https://github.com/Shougo/unite.vim)に対応しており，動画の
+ランキングから選択して，動画を再生することができます．
 
 まず，以下のコマンドを実行して，ランキングのRSSを取得してください．
 (XMLのパースにやや時間を要します)
@@ -55,9 +56,26 @@ let g:nicovideo#password = 'xyzwXYZW1234'
 ```
 
 
+#### ctrlp.vim
+
+他にも，[ctrlp.vim](https://github.com/ctrlpvim/ctrlp.vim)の拡張も用意して
+います．
+以下のコマンドを実行するとuntie.vimと同様に絞り込み検索ができます．
+
+```vim
+:CtrlPNicovideo
+```
+
+
 ## Dependent plugins
 
+#### Required
+
 - [vimproc.vim](https://github.com/Shougo/vimproc.vim)
+
+#### Optional
+
+- [ctrlp.vim](https://github.com/ctrlpvim/ctrlp.vim)
 - [unite.vim](https://github.com/Shougo/unite.vim)
 
 

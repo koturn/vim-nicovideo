@@ -31,6 +31,7 @@ let s:CACHE_FILENAME = 'cache' | lockvar s:CACHE_FILENAME
 let s:LOGIN_URL = 'https://secure.nicovideo.jp/secure/login?site=niconico' | lockvar s:LOGIN_URL
 let s:LOGOUT_URL = 'https://secure.nicovideo.jp/secure/logout' | lockvar s:LOGOUT_URL
 let s:RSS_URL = 'http://www.nicovideo.jp/ranking/fav/daily/all?rss=2.0' | lockvar s:RSS_URL
+let s:RSS_TAG_URL_FORMAT = 'http://www.nicovideo.jp/tag/%s?rss=2.0' | lockvar s:RSS_TAG_URL_FORMAT
 let s:GETFLV_URL = 'http://flapi.nicovideo.jp/api/getflv/' | lockvar s:GETFLV_URL
 
 
@@ -62,38 +63,18 @@ function! nicovideo#logout()
 endfunction
 
 function! nicovideo#update_ranking()
-  let l:start_time = reltime()
-  let l:time = reltime()
-  let l:response = s:HTTP.request({'url': s:RSS_URL, 'client': ['curl']})
-  if l:response.status != 200
-    echoerr 'Connection error:' '[' . l:response.status . ']' l:response.statusText
-    return
-  endif
-  if g:nicovideo#verbose
-    echomsg '[HTTP request]:' reltimestr(reltime(l:time)) 's'
-  endif
-
-  let l:time = reltime()
-  let l:dom = s:XML.parse(l:response.content)
-  let g:dom = l:dom
-  if g:nicovideo#verbose
-    echomsg '[parse XML]:   ' reltimestr(reltime(l:time)) 's'
-  endif
-
-  let l:time = reltime()
-  let l:infos = s:parse_dom(l:dom)
-  if g:nicovideo#verbose
-    echomsg '[parse DOM]:   ' reltimestr(reltime(l:time)) 's'
-    echomsg '[total]:       ' reltimestr(reltime(l:start_time)) 's'
-  endif
-
+  let l:infos = s:parse_rss(s:RSS_URL)
   let l:write_list = [s:JSON.encode({'nicovideo': l:infos})]
   call s:CACHE.writefile(g:nicovideo#cache_dir, s:CACHE_FILENAME, l:write_list)
   return l:infos 
 endfunction
 
-function! nicovideo#get_channel_list()
-  if s:CACHE.filereadable(g:nicovideo#cache_dir, s:CACHE_FILENAME)
+function! nicovideo#get_channel_list(...)
+  let l:tag = get(a:, 1, '')
+  if l:tag !=# ''
+    let l:tag = s:HTTP.encodeURI(iconv(l:tag, &encoding, 'utf-8'))
+    return s:parse_rss(printf(s:RSS_TAG_URL_FORMAT, l:tag))
+  elseif s:CACHE.filereadable(g:nicovideo#cache_dir, s:CACHE_FILENAME)
     return s:JSON.decode(s:CACHE.readfile(g:nicovideo#cache_dir, s:CACHE_FILENAME)[0]).nicovideo
   else
     return nicovideo#update_ranking()
@@ -116,7 +97,7 @@ endfunction
 
 function! s:get_file_url(url)
   let l:filename = split(a:url, '/')[-1]
-  let l:suffix = l:filename[0: 1] ==# 'nm' ? '?as3=1' : ''
+  let l:suffix = l:filename[0 : 1] ==# 'nm' ? '?as3=1' : ''
   let l:res = vimproc#system(printf('%s -s -b %s "%s%s%s" %s',
         \ g:nicovideo#curl, g:nicovideo#cookie, s:GETFLV_URL, l:filename, l:suffix,
         \ g:nicovideo#crt_file ==# '' ? '' : '--cacert ' . g:nicovideo#crt_file))
@@ -127,6 +108,33 @@ function! s:get_file_url(url)
     return -1
   endif
   return substitute(l:url_list[0], '^url=', '', '')
+endfunction
+
+function! s:parse_rss(url)
+  let l:start_time = reltime()
+  let l:time = reltime()
+  let l:response = s:HTTP.request({'url': a:url, 'client': ['curl']})
+  if l:response.status != 200
+    echoerr 'Connection error:' '[' . l:response.status . ']' l:response.statusText
+    return
+  endif
+  if g:nicovideo#verbose
+    echomsg '[HTTP request]:' reltimestr(reltime(l:time)) 's'
+  endif
+
+  let l:time = reltime()
+  let l:dom = s:XML.parse(l:response.content)
+  if g:nicovideo#verbose
+    echomsg '[parse XML]:   ' reltimestr(reltime(l:time)) 's'
+  endif
+
+  let l:time = reltime()
+  let l:infos = s:parse_dom(l:dom)
+  if g:nicovideo#verbose
+    echomsg '[parse DOM]:   ' reltimestr(reltime(l:time)) 's'
+    echomsg '[total]:       ' reltimestr(reltime(l:start_time)) 's'
+  endif
+  return l:infos 
 endfunction
 
 function! s:parse_dom(dom)

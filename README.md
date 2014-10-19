@@ -55,6 +55,21 @@ let g:nicovideo#password = 'xyzwXYZW1234'
 :Unite nicovideo
 ```
 
+また，タグ検索にも対応しています．
+検索したいタグをunite-sourceの引数として渡すことで，そのタグに応じた検索結果
+一覧が表示されます．
+例えば，"tag"というタグで検索する場合，以下のコマンドを実行してください．
+
+```
+:Unite nicovideo:tag
+```
+
+また，複数の引数を与えることで，それぞれの検索結果を統合して表示することができます．
+
+```
+:Unite nicovideo:tag1:tag2:tag3
+```
+
 
 #### ctrlp.vim
 
@@ -65,6 +80,8 @@ let g:nicovideo#password = 'xyzwXYZW1234'
 ```vim
 :CtrlPNicovideo
 ```
+
+unite.vimのようなタグ検索の機能はありません．
 
 
 ## Dependent plugins

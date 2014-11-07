@@ -48,6 +48,8 @@ let g:nicovideo#password = 'xyzwXYZW1234'
 :NicoVideoUpdateRanking
 ```
 
+![unite-nicovideo1.png](https://raw.githubusercontent.com/wiki/koturn/vim-nicovideo/image/unite-nicovideo1.png)
+
 次に，以下のコマンドを実行することで，ランキングのリストが表示されます．
 好きな動画を選択して，動画を再生してください．
 
@@ -63,6 +65,10 @@ let g:nicovideo#password = 'xyzwXYZW1234'
 ```
 :Unite nicovideo:tag
 ```
+
+以下は，"Vim"というタグで検索した結果です．
+
+![unite-nicovideo2.png](https://raw.githubusercontent.com/wiki/koturn/vim-nicovideo/image/unite-nicovideo2.png)
 
 また，複数の引数を与えることで，それぞれの検索結果を統合して表示することができます．
 

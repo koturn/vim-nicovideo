@@ -22,9 +22,11 @@ let g:nicovideo#password = get(g:, 'nicovideo#password', '')
 let g:nicovideo#verbose = get(g:, 'nicovideo#verbose', 0)
 
 let s:V = vital#of('nicovideo')
+let s:L = s:V.import('Data.List')
 let s:CACHE = s:V.import('System.Cache')
-let s:JSON = s:V.import('Web.JSON')
+let s:HTML = s:V.import('Web.HTML')
 let s:HTTP = s:V.import('Web.HTTP')
+let s:JSON = s:V.import('Web.JSON')
 let s:XML = s:V.import('Web.XML')
 
 let s:CACHE_FILENAME = 'cache' | lockvar s:CACHE_FILENAME
@@ -66,14 +68,17 @@ function! nicovideo#update_ranking()
   let l:infos = s:parse_rss(s:RSS_URL)
   let l:write_list = [s:JSON.encode({'nicovideo': l:infos})]
   call s:CACHE.writefile(g:nicovideo#cache_dir, s:CACHE_FILENAME, l:write_list)
-  return l:infos 
+  return l:infos
 endfunction
 
 function! nicovideo#get_channel_list(...)
-  let l:tag = get(a:, 1, '')
-  if l:tag !=# ''
-    let l:tag = s:HTTP.encodeURI(iconv(l:tag, &encoding, 'utf-8'))
-    return s:parse_rss(printf(s:RSS_TAG_URL_FORMAT, l:tag))
+  let l:tags = get(a:, 1, '')
+  if type(l:tags) == 1 && l:tags !=# ''
+    return s:parse_rss(printf(s:RSS_TAG_URL_FORMAT, s:HTTP.encodeURI(iconv(l:tags, &enc, 'utf-8'))))
+  elseif type(l:tags) == 3
+    return s:L.uniq_by(s:L.flatten(map(l:tags,
+          \   's:parse_rss(printf(s:RSS_TAG_URL_FORMAT, s:HTTP.encodeURI(iconv(v:val, &enc, "utf-8"))))'
+          \ ), 1), 'v:val.link')
   elseif s:CACHE.filereadable(g:nicovideo#cache_dir, s:CACHE_FILENAME)
     return s:JSON.decode(s:CACHE.readfile(g:nicovideo#cache_dir, s:CACHE_FILENAME)[0]).nicovideo
   else
@@ -134,31 +139,26 @@ function! s:parse_rss(url)
     echomsg '[parse DOM]:   ' reltimestr(reltime(l:time)) 's'
     echomsg '[total]:       ' reltimestr(reltime(l:start_time)) 's'
   endif
-  return l:infos 
+  return l:infos
 endfunction
 
 function! s:parse_dom(dom)
-  let l:infos = []
   let l:items = a:dom.childNode('channel').childNodes('item')
-  for l:c1 in l:items
-    let l:info = {}
-    for l:c2 in l:c1.child
-      if type(l:c2) == 4
-        if l:c2.name ==# 'title'
-          let l:info.title = l:c2.value()
-        elseif l:c2.name ==# 'link'
-          let l:info.link = l:c2.value()
-        elseif l:c2.name ==# 'pubDate'
-          let l:info.pubDate = l:c2.value()
-        endif
-      endif
-      unlet l:c2
-    endfor
-    if len(l:info) == 3
-      call add(l:infos, l:info)
+  return filter(map(l:items, 's:make_info(v:val)'), 'len(v:val) == 3')
+endfunction
+
+function! s:make_info(node)
+  let l:info = {}
+  for l:c in filter(a:node.child, 'type(v:val) == 4')
+    if l:c.name ==# 'title'
+      let l:info.title = s:HTML.decodeEntityReference(l:c.value())
+    elseif l:c.name ==# 'link'
+      let l:info.link = l:c.value()
+    elseif l:c.name ==# 'pubDate'
+      let l:info.pubDate = l:c.value()
     endif
   endfor
-  return l:infos
+  return l:info
 endfunction
 
 function! s:has_vimproc()

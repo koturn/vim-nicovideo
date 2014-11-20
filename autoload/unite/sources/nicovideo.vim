@@ -32,20 +32,11 @@ function! s:source.action_table.play.func(candidate)
 endfunction
 
 function! s:source.gather_candidates(args, context)
-  if len(a:args) == 0
-    let l:channels = nicovideo#get_channel_list()
-  else
-    let l:channels = []
-    for l:arg in a:args
-      call extend(l:channels, nicovideo#get_channel_list(l:arg))
-    endfor
-  endif
   let a:context.source.unite__cached_candidates = []
-  if empty(l:channels)
-    return []
-  else
-    return map(l:channels, '{"word": v:val.title, "action__link": v:val.link}')
-  endif
+  let l:channels = len(a:args) == 0 ?
+        \ nicovideo#get_channel_list() : nicovideo#get_channel_list(a:args)
+  return empty(l:channels) ?
+        \ [] : map(l:channels, '{"word": v:val.title, "action__link": v:val.link}')
 endfunction
 
 

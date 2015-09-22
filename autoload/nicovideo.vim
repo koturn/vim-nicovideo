@@ -37,7 +37,7 @@ let s:RSS_TAG_URL_FORMAT = 'http://www.nicovideo.jp/tag/%s?rss=2.0' | lockvar s:
 let s:GETFLV_URL = 'http://flapi.nicovideo.jp/api/getflv/' | lockvar s:GETFLV_URL
 
 
-function! nicovideo#watch(url)
+function! nicovideo#watch(url) abort
   if !nicovideo#login(g:nicovideo#mail_address, g:nicovideo#password)
     return
   endif
@@ -48,7 +48,7 @@ function! nicovideo#watch(url)
   endif
 endfunction
 
-function! nicovideo#login(mail_address, password)
+function! nicovideo#login(mail_address, password) abort
   let g:nicovideo#mail_address = a:mail_address
   let g:nicovideo#password = a:password
   call vimproc#system(printf('%s -s -c %s -d "mail=%s" -d "password=%s" "%s" -3 -i %s',
@@ -58,20 +58,20 @@ function! nicovideo#login(mail_address, password)
   return 1
 endfunction
 
-function! nicovideo#logout()
+function! nicovideo#logout() abort
   call vimproc#system(printf('%s -s -b %s "%s" -3 -i %s',
         \ g:nicovideo#curl, g:nicovideo#cookie, s:LOGOUT_URL,
         \ g:nicovideo#crt_file ==# '' ? '' : '--cacert ' . g:nicovideo#crt_file))
 endfunction
 
-function! nicovideo#update_ranking()
+function! nicovideo#update_ranking() abort
   let l:infos = s:parse_rss(s:RSS_URL)
   let l:write_list = [s:JSON.encode({'nicovideo': l:infos})]
   call s:CACHE.writefile(g:nicovideo#cache_dir, s:CACHE_FILENAME, l:write_list)
   return l:infos
 endfunction
 
-function! nicovideo#get_channel_list(...)
+function! nicovideo#get_channel_list(...) abort
   let l:tags = get(a:, 1, '')
   if type(l:tags) == 1 && l:tags !=# ''
     return s:parse_rss(printf(s:RSS_TAG_URL_FORMAT, s:HTTP.encodeURI(iconv(l:tags, &enc, 'utf-8'))))
@@ -87,7 +87,7 @@ function! nicovideo#get_channel_list(...)
 endfunction
 
 
-function! s:play_video(url)
+function! s:play_video(url) abort
   if !s:has_vimproc()
     echoerr 'Please install vimproc.vim'
     return
@@ -100,7 +100,7 @@ function! s:play_video(url)
         \ . ' | ' . g:nicovideo#mplayer . ' ' .g:nicovideo#mplayer_option . ' -')
 endfunction
 
-function! s:get_file_url(url)
+function! s:get_file_url(url) abort
   let l:filename = split(a:url, '/')[-1]
   let l:suffix = l:filename[0 : 1] ==# 'nm' ? '?as3=1' : ''
   let l:res = vimproc#system(printf('%s -s -b %s "%s%s%s" %s',
@@ -115,7 +115,7 @@ function! s:get_file_url(url)
   return substitute(l:url_list[0], '^url=', '', '')
 endfunction
 
-function! s:parse_rss(url)
+function! s:parse_rss(url) abort
   let l:start_time = reltime()
   let l:time = reltime()
   let l:response = s:HTTP.request({'url': a:url, 'client': ['curl']})
@@ -142,12 +142,12 @@ function! s:parse_rss(url)
   return l:infos
 endfunction
 
-function! s:parse_dom(dom)
+function! s:parse_dom(dom) abort
   let l:items = a:dom.childNode('channel').childNodes('item')
   return filter(map(l:items, 's:make_info(v:val)'), 'len(v:val) == 3')
 endfunction
 
-function! s:make_info(node)
+function! s:make_info(node) abort
   let l:info = {}
   for l:c in filter(a:node.child, 'type(v:val) == 4')
     if l:c.name ==# 'title'
@@ -161,7 +161,7 @@ function! s:make_info(node)
   return l:info
 endfunction
 
-function! s:has_vimproc()
+function! s:has_vimproc() abort
   if !exists('s:exists_vimproc')
     try
       call vimproc#version()

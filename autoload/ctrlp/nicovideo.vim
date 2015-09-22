@@ -26,12 +26,12 @@ else
 endif
 
 
-function! ctrlp#nicovideo#init()
+function! ctrlp#nicovideo#init() abort
   let s:channel_list = nicovideo#get_channel_list()
   return map(copy(s:channel_list), 'v:val.title')
 endfunction
 
-function! ctrlp#nicovideo#accept(mode, str)
+function! ctrlp#nicovideo#accept(mode, str) abort
   call ctrlp#exit()
   for l:channel in s:channel_list
     if l:channel.title ==# a:str
@@ -42,6 +42,6 @@ function! ctrlp#nicovideo#accept(mode, str)
 endfunction
 
 let s:id = g:ctrlp_builtins + len(g:ctrlp_ext_vars)
-function! ctrlp#nicovideo#id()
+function! ctrlp#nicovideo#id() abort
   return s:id
 endfunction

@@ -33,9 +33,9 @@ endfunction
 
 function! ctrlp#nicovideo#accept(mode, str) abort
   call ctrlp#exit()
-  for l:channel in s:channel_list
-    if l:channel.title ==# a:str
-      call nicovideo#watch(l:channel.link)
+  for channel in s:channel_list
+    if channel.title ==# a:str
+      call nicovideo#watch(channel.link)
       return
     endif
   endfor

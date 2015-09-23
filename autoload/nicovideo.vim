@@ -65,18 +65,18 @@ function! nicovideo#logout() abort
 endfunction
 
 function! nicovideo#update_ranking() abort
-  let l:infos = s:parse_rss(s:RSS_URL)
-  let l:write_list = [s:JSON.encode({'nicovideo': l:infos})]
-  call s:CACHE.writefile(g:nicovideo#cache_dir, s:CACHE_FILENAME, l:write_list)
-  return l:infos
+  let infos = s:parse_rss(s:RSS_URL)
+  let write_list = [s:JSON.encode({'nicovideo': infos})]
+  call s:CACHE.writefile(g:nicovideo#cache_dir, s:CACHE_FILENAME, write_list)
+  return infos
 endfunction
 
 function! nicovideo#get_channel_list(...) abort
-  let l:tags = get(a:, 1, '')
-  if type(l:tags) == 1 && l:tags !=# ''
-    return s:parse_rss(printf(s:RSS_TAG_URL_FORMAT, s:HTTP.encodeURI(iconv(l:tags, &enc, 'utf-8'))))
-  elseif type(l:tags) == 3
-    return s:L.uniq_by(s:L.flatten(map(l:tags,
+  let tags = get(a:, 1, '')
+  if type(tags) == 1 && tags !=# ''
+    return s:parse_rss(printf(s:RSS_TAG_URL_FORMAT, s:HTTP.encodeURI(iconv(tags, &enc, 'utf-8'))))
+  elseif type(tags) == 3
+    return s:L.uniq_by(s:L.flatten(map(tags,
           \   's:parse_rss(printf(s:RSS_TAG_URL_FORMAT, s:HTTP.encodeURI(iconv(v:val, &enc, "utf-8"))))'
           \ ), 1), 'v:val.link')
   elseif s:CACHE.filereadable(g:nicovideo#cache_dir, s:CACHE_FILENAME)
@@ -94,71 +94,71 @@ function! s:play_video(url) abort
   endif
   call vimproc#system(printf('%s -s -b %s -c %s %s -i',
         \ g:nicovideo#curl, g:nicovideo#cookie, g:nicovideo#cookie, a:url))
-  let l:file_url = s:get_file_url(a:url)
-  if l:file_url == -1 | return | endif
-  call vimproc#system_bg(printf('curl -b %s %s', g:nicovideo#cookie, l:file_url)
+  let file_url = s:get_file_url(a:url)
+  if file_url == -1 | return | endif
+  call vimproc#system_bg(printf('curl -b %s %s', g:nicovideo#cookie, file_url)
         \ . ' | ' . g:nicovideo#mplayer . ' ' .g:nicovideo#mplayer_option . ' -')
 endfunction
 
 function! s:get_file_url(url) abort
-  let l:filename = split(a:url, '/')[-1]
-  let l:suffix = l:filename[0 : 1] ==# 'nm' ? '?as3=1' : ''
-  let l:res = vimproc#system(printf('%s -s -b %s "%s%s%s" %s',
-        \ g:nicovideo#curl, g:nicovideo#cookie, s:GETFLV_URL, l:filename, l:suffix,
+  let filename = split(a:url, '/')[-1]
+  let suffix = filename[0 : 1] ==# 'nm' ? '?as3=1' : ''
+  let res = vimproc#system(printf('%s -s -b %s "%s%s%s" %s',
+        \ g:nicovideo#curl, g:nicovideo#cookie, s:GETFLV_URL, filename, suffix,
         \ g:nicovideo#crt_file ==# '' ? '' : '--cacert ' . g:nicovideo#crt_file))
-  let l:url_list = filter(split(s:HTTP.decodeURI(l:res), '&'), 'v:val =~# "^url="')
-  if empty(l:url_list)
+  let url_list = filter(split(s:HTTP.decodeURI(res), '&'), 'v:val =~# "^url="')
+  if empty(url_list)
     echoerr 'Failed to get file URL'
     echoerr '  (Check certificate file is valid)'
     return -1
   endif
-  return substitute(l:url_list[0], '^url=', '', '')
+  return substitute(url_list[0], '^url=', '', '')
 endfunction
 
 function! s:parse_rss(url) abort
-  let l:start_time = reltime()
-  let l:time = reltime()
-  let l:response = s:HTTP.request({'url': a:url, 'client': ['curl']})
-  if l:response.status != 200
-    echoerr 'Connection error:' '[' . l:response.status . ']' l:response.statusText
+  let start_time = reltime()
+  let time = reltime()
+  let response = s:HTTP.request({'url': a:url, 'client': ['curl']})
+  if response.status != 200
+    echoerr 'Connection error:' '[' . response.status . ']' response.statusText
     return
   endif
   if g:nicovideo#verbose
-    echomsg '[HTTP request]:' reltimestr(reltime(l:time)) 's'
+    echomsg '[HTTP request]:' reltimestr(reltime(time)) 's'
   endif
 
-  let l:time = reltime()
-  let l:dom = s:XML.parse(l:response.content)
+  let time = reltime()
+  let dom = s:XML.parse(response.content)
   if g:nicovideo#verbose
-    echomsg '[parse XML]:   ' reltimestr(reltime(l:time)) 's'
+    echomsg '[parse XML]:   ' reltimestr(reltime(time)) 's'
   endif
 
-  let l:time = reltime()
-  let l:infos = s:parse_dom(l:dom)
+  let time = reltime()
+  let infos = s:parse_dom(dom)
   if g:nicovideo#verbose
-    echomsg '[parse DOM]:   ' reltimestr(reltime(l:time)) 's'
-    echomsg '[total]:       ' reltimestr(reltime(l:start_time)) 's'
+    echomsg '[parse DOM]:   ' reltimestr(reltime(time)) 's'
+    echomsg '[total]:       ' reltimestr(reltime(start_time)) 's'
   endif
-  return l:infos
+  return infos
 endfunction
 
 function! s:parse_dom(dom) abort
-  let l:items = a:dom.childNode('channel').childNodes('item')
-  return filter(map(l:items, 's:make_info(v:val)'), 'len(v:val) == 3')
+  let items = a:dom.childNode('channel').childNodes('item')
+  return filter(map(items, 's:make_info(v:val)'), 'len(v:val) == 3')
 endfunction
 
 function! s:make_info(node) abort
-  let l:info = {}
-  for l:c in filter(a:node.child, 'type(v:val) == 4')
-    if l:c.name ==# 'title'
-      let l:info.title = s:HTML.decodeEntityReference(l:c.value())
-    elseif l:c.name ==# 'link'
-      let l:info.link = l:c.value()
-    elseif l:c.name ==# 'pubDate'
-      let l:info.pubDate = l:c.value()
+  let info = {}
+  for c in filter(a:node.child, 'type(v:val) == 4')
+    if c.name ==# 'title'
+      let info.title = s:HTML.decodeEntityReference(c.value())
+    elseif c.name ==# 'link'
+      let info.link = c.value()
+    elseif c.name ==# 'pubDate'
+      let info.pubDate = c.value()
     endif
   endfor
-  return l:info
+  return info
 endfunction
 
 function! s:has_vimproc() abort

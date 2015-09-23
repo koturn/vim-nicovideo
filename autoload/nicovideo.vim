@@ -23,13 +23,12 @@ let g:nicovideo#verbose = get(g:, 'nicovideo#verbose', 0)
 
 let s:V = vital#of('nicovideo')
 let s:L = s:V.import('Data.List')
-let s:CACHE = s:V.import('System.Cache')
+let s:CacheFile = s:V.import('System.Cache').new('file', {'cache_dir': g:nicovideo#cache_dir})
 let s:HTML = s:V.import('Web.HTML')
 let s:HTTP = s:V.import('Web.HTTP')
-let s:JSON = s:V.import('Web.JSON')
 let s:XML = s:V.import('Web.XML')
 
-let s:CACHE_FILENAME = 'cache' | lockvar s:CACHE_FILENAME
+let s:CACHE_NAME = 'ranking' | lockvar s:CACHE_NAME
 let s:LOGIN_URL = 'https://secure.nicovideo.jp/secure/login?site=niconico' | lockvar s:LOGIN_URL
 let s:LOGOUT_URL = 'https://secure.nicovideo.jp/secure/logout' | lockvar s:LOGOUT_URL
 let s:RSS_URL = 'http://www.nicovideo.jp/ranking/fav/daily/all?rss=2.0' | lockvar s:RSS_URL
@@ -66,8 +65,7 @@ endfunction
 
 function! nicovideo#update_ranking() abort
   let infos = s:parse_rss(s:RSS_URL)
-  let write_list = [s:JSON.encode({'nicovideo': infos})]
-  call s:CACHE.writefile(g:nicovideo#cache_dir, s:CACHE_FILENAME, write_list)
+  call s:CacheFile.set(s:CACHE_NAME, infos)
   return infos
 endfunction
 
@@ -79,10 +77,9 @@ function! nicovideo#get_channel_list(...) abort
     return s:L.uniq_by(s:L.flatten(map(tags,
           \   's:parse_rss(printf(s:RSS_TAG_URL_FORMAT, s:HTTP.encodeURI(iconv(v:val, &enc, "utf-8"))))'
           \ ), 1), 'v:val.link')
-  elseif s:CACHE.filereadable(g:nicovideo#cache_dir, s:CACHE_FILENAME)
-    return s:JSON.decode(s:CACHE.readfile(g:nicovideo#cache_dir, s:CACHE_FILENAME)[0]).nicovideo
   else
-    return nicovideo#update_ranking()
+    let infos = s:CacheFile.get(s:CACHE_NAME)
+    return empty(infos) ? nicovideo#update_ranking() : infos
   endif
 endfunction
 

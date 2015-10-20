@@ -47,12 +47,12 @@ function! nicovideo#watch(url) abort
   endif
 endfunction
 
-function! nicovideo#login(mail_address, password) abort
-  let g:nicovideo#mail_address = a:mail_address
-  let g:nicovideo#password = a:password
+function! nicovideo#login(...) abort
+  let g:nicovideo#mail_address = a:0 > 0 ? a:1 : input('Mail Address: ')
+  let g:nicovideo#password = a:0 > 1 ? a:2 : inputsecret('Password: ')
   call vimproc#system(printf('%s -s -c %s -d "mail=%s" -d "password=%s" "%s" --ssl -i %s',
         \ g:nicovideo#curl, g:nicovideo#cookie,
-        \ a:mail_address, a:password, s:LOGIN_URL,
+        \ g:nicovideo#mail_address, g:nicovideo#password, s:LOGIN_URL,
         \ g:nicovideo#crt_file ==# '' ? '' : '--cacert ' . g:nicovideo#crt_file))
   return 1
 endfunction

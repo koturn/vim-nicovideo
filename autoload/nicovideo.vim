@@ -50,7 +50,7 @@ endfunction
 function! nicovideo#login(mail_address, password) abort
   let g:nicovideo#mail_address = a:mail_address
   let g:nicovideo#password = a:password
-  call vimproc#system(printf('%s -s -c %s -d "mail=%s" -d "password=%s" "%s" -3 -i %s',
+  call vimproc#system(printf('%s -s -c %s -d "mail=%s" -d "password=%s" "%s" --ssl -i %s',
         \ g:nicovideo#curl, g:nicovideo#cookie,
         \ a:mail_address, a:password, s:LOGIN_URL,
         \ g:nicovideo#crt_file ==# '' ? '' : '--cacert ' . g:nicovideo#crt_file))
@@ -58,7 +58,7 @@ function! nicovideo#login(mail_address, password) abort
 endfunction
 
 function! nicovideo#logout() abort
-  call vimproc#system(printf('%s -s -b %s "%s" -3 -i %s',
+  call vimproc#system(printf('%s -s -b %s "%s" --ssl -i %s',
         \ g:nicovideo#curl, g:nicovideo#cookie, s:LOGOUT_URL,
         \ g:nicovideo#crt_file ==# '' ? '' : '--cacert ' . g:nicovideo#crt_file))
 endfunction
